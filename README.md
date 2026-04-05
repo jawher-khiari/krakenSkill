@@ -1,143 +1,148 @@
-# 🐙 Kraken — Ultimate Claude Code Development Skill
+# 🦑 The Kraken v5 — Ultrarag Edition
 
-> **2 hours thinking beats 2 hours debugging. Always.**
+A 10-phase development pipeline skill that works across **OpenCode**, **Claude Code**, and **Codex**. Uses MCP tools at every phase and retrieves domain knowledge on-demand through ultrarag, reducing context consumption by ~54%.
 
-The Kraken is a 10-phase self-driving development pipeline for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that replicates the behavior of a 20-year senior developer with security engineering background and UI/UX design expertise.
+## Architecture
 
-It enforces a mandatory pipeline — scaled to complexity but never skipped — that guarantees production-quality code on every task.
+```
+┌─────────────────────────────────────────────┐
+│  Context Window (~3,300 tokens)             │
+│  SKILL.md — Procedures + Receipts + MCP Map │
+└──────────────────┬──────────────────────────┘
+                   │ on-demand queries (~200 tokens each)
+┌──────────────────▼──────────────────────────┐
+│  UltraRAG (~7,100 tokens stored)            │
+│  7 knowledge docs: security, design,        │
+│  patterns, review, planning, testing, optim │
+└─────────────────────────────────────────────┘
+```
 
----
+## The 10-Phase Pipeline
 
-## 🔥 What Makes Kraken Different
+```
+RECEIVE → BRAINSTORM → DECOMPOSE → PLAN → DESIGN-UI → IMPLEMENT → SECURITY-AUDIT → REVIEW → OPTIMIZE → VERIFY
+```
 
-| Feature | Typical AI Coding | Kraken |
+Every phase:
+- Uses designated MCP tools (13 tools mapped)
+- Emits a structured receipt with verification hash
+- Requires explicit user approval before advancing
+- Scales depth to task complexity (one-line fix = 2 min, full feature = hours)
+
+## MCP Tools Used
+
+| Category | Tools | Phases |
 |---|---|---|
-| **Planning** | Jumps straight to code | 4 phases before any code is written |
-| **Security** | Afterthought | 9-pass hostile audit based on OWASP Top 10:2025 |
-| **Design** | Generic UI | WCAG 2.2 AA, design tokens, component state matrix |
-| **Testing** | "I'll add tests later" | TDD workflow, coverage ratcheting, property-based testing |
-| **Code Quality** | Works ≠ done | 50-point review protocol, complexity gates, refactoring catalog |
-| **Architecture** | Whatever works | Pattern detection, ADRs, vertical slicing, SOLID verification |
+| Reasoning | `sequential-thinking`, `cort` | P1-P4, P7-P8 |
+| Codebase | `desktop-commander`, `git-mcp-server`, `gitmcp` | P2, P6, P10 |
+| Design | `figma`, `shadcn-ui` | P5, P6 |
+| API | `openspec`, `postman` | P4-P7, P10 |
+| Testing | `playwright`, `browser-tools`, `chrome-devtools` | P5, P7-P10 |
+| Knowledge | `ultrarag` | P2, P4-P9 |
 
----
+## Installation
 
-## 📋 The 10-Phase Pipeline
+### Quick Install (All Platforms)
 
+```bash
+git clone https://github.com/jawher-khiari/krakenSkill.git
+cd krakenSkill
+git checkout kraken-v2
+chmod +x install.sh
+./install.sh
 ```
-RECEIVE → BRAINSTORM → DECOMPOSE → PLAN → DESIGN-UI
-    ↓                                          ↓
-VERIFY ← OPTIMIZE ← REVIEW ← SECURITY-AUDIT ← IMPLEMENT
+
+### Manual Install — OpenCode
+
+```bash
+mkdir -p ~/.config/opencode/skills/kraken
+cp kraken/SKILL.md ~/.config/opencode/skills/kraken/SKILL.md
 ```
 
-| Phase | Purpose | Reference File Loaded |
+### Manual Install — Claude Code
+
+```bash
+mkdir -p ~/.claude/skills/kraken
+cp kraken/SKILL.md ~/.claude/skills/kraken/SKILL.md
+```
+
+### Manual Install — Codex / Agents
+
+```bash
+mkdir -p ~/.agents/skills/kraken
+cp kraken/SKILL.md ~/.agents/skills/kraken/SKILL.md
+```
+
+### Project-Local Install
+
+```bash
+# In your project root:
+mkdir -p .opencode/skills/kraken .claude/skills/kraken .agents/skills/kraken
+cp /path/to/krakenSkill/kraken/SKILL.md .opencode/skills/kraken/
+cp /path/to/krakenSkill/kraken/SKILL.md .claude/skills/kraken/
+cp /path/to/krakenSkill/kraken/SKILL.md .agents/skills/kraken/
+```
+
+## UltraRAG Setup (Optional but Recommended)
+
+The `knowledge/` directory contains 7 documents designed for ultrarag ingestion. Without ultrarag, the skill uses built-in model knowledge as fallback.
+
+### Setup Steps
+
+1. Ensure your ultrarag Docker container is running
+2. Ingest the knowledge files:
+   - Create a collection named `kraken-knowledge`
+   - Upload all 7 files from `knowledge/`
+   - Recommended chunking: `chunk_size=500, chunk_overlap=50`
+3. Verify: query `"OWASP injection prevention"` should return relevant content
+
+### Knowledge Files
+
+| File | Content | Used By |
 |---|---|---|
-| 1. **RECEIVE** | Understand the real need, not just the stated request | — |
-| 2. **BRAINSTORM** | Scan codebase, find patterns, generate 2-3 approaches | `patterns-catalog.md` |
-| 3. **DECOMPOSE** | Vertical slices, walking skeleton, INVEST validation | `planning-methodology.md` |
-| 4. **PLAN** | File-by-file roadmap, test cases FIRST, security annotations | `testing-strategy.md` |
-| 5. **DESIGN-UI** | Visual hierarchy, accessibility, tokens, state matrix | `design-checklist.md` |
-| 6. **IMPLEMENT** | Pattern-matched, TDD, early returns, commit discipline | `testing-strategy.md` |
-| 7. **SECURITY-AUDIT** | OWASP Top 10:2025, STRIDE/DREAD, 9 hostile passes | `security-checklist.md` |
-| 8. **REVIEW** | Google-grade 7-phase review, 50-point protocol | `review-checklist.md` |
-| 9. **OPTIMIZE** | Fowler refactoring catalog, Rule of Three, profiling | `optimization-patterns.md` |
-| 10. **VERIFY** | Definition of Done, ship gate, rollback plan | — |
+| `kraken-security.md` | OWASP Top 10, 9 security passes, threat modeling, root cause analysis | Phase 7 |
+| `kraken-design.md` | WCAG 2.2 AA, design principles, state matrix, API contracts | Phase 5 |
+| `kraken-patterns.md` | Code quality rules, design patterns, naming, error handling | Phase 6 |
+| `kraken-review.md` | SOLID assessment, code smells, 7-pass review, complexity thresholds | Phase 8 |
+| `kraken-planning.md` | INVEST criteria, vertical slicing, estimation, scalability strategy | Phase 4 |
+| `kraken-testing.md` | Testing pyramid, Arrange/Act/Assert, test grouping, coverage | Phase 6, 10 |
+| `kraken-optimization.md` | Refactoring patterns, Rule of Three, breaking change detection | Phase 9 |
 
----
-
-## 📦 Installation
-
-### Option A: Install as `.skill` package
-```bash
-claude install-skill kraken.skill
-```
-
-### Option B: Manual installation
-```bash
-# Copy to your Claude Code user skills directory
-cp -r kraken/ ~/.claude/skills/user/kraken/
-
-# Or project-local:
-cp -r kraken/ .claude/skills/user/kraken/
-```
-
-### Option C: Clone this repo
-```bash
-git clone https://github.com/YOUR_USERNAME/kraken-skill.git
-cp -r kraken-skill/ ~/.claude/skills/user/kraken/
-```
-
----
-
-## 🗂 File Structure
+## Usage
 
 ```
-kraken/
-├── SKILL.md                              # Main skill (640 lines) — always in context
-└── references/                           # Loaded on-demand at specific phases
-    ├── security-checklist.md             # OWASP Top 10:2025 + STRIDE/DREAD
-    ├── review-checklist.md               # 50-point review protocol + complexity gates
-    ├── design-checklist.md               # WCAG 2.2 + design tokens + animation timing
-    ├── optimization-patterns.md          # Refactoring catalog + performance budgets
-    ├── patterns-catalog.md               # Design pattern selection + SOLID + code smells
-    ├── testing-strategy.md               # TDD + testing shapes + anti-patterns
-    └── planning-methodology.md           # Vertical slicing + estimation + branching
+kraken build user authentication system
+kraken refactor the product catalog
+kraken design the checkout flow
+kraken implement OAuth integration
+kraken optimize the search API
+kraken fix the pagination bug
+kraken secure the file upload endpoint
 ```
 
-**Total: 2,568 lines across 8 files (121KB)**
+## Prompt Library Integration
 
----
+This skill integrates patterns from [xixu-me/prompt-library](https://github.com/xixu-me/prompt-library/tree/main/development):
 
-## 🔌 Skill Delegation
-
-The Kraken orchestrates other Claude Code skills when detected:
-
-| Condition | Delegated Skill | At Phase |
+| Prompt | Pattern Integrated | Phase |
 |---|---|---|
-| Express + React codebase | `express-react-vault-mapper` | Phase 2 |
-| .NET + Angular codebase | `dotnet-angular-vault-mapper` | Phase 2 |
-| UI implementation needed | `frontend-design` | Phase 5 + 6 |
+| `architecture-planner` | Structured requirements (functional/non-functional/constraints) | P1, P4 |
+| `code-review` | Priority levels (Critical/High/Medium/Low), positive aspects | P8 |
+| `bug-hunter` | Root cause analysis, fix, prevention | P7 |
+| `refactoring-assistant` | SOLID assessment, code smell detection, breaking changes | P8, P9 |
+| `test-case-generator` | Arrange/Act/Assert, test grouping by scenario type | P6 |
+| `documentation-generator` | API doc standard (7 required fields), doc verification | P5, P10 |
 
----
+## Version History
 
-## 🎯 Trigger Keywords
+| Version | What Changed |
+|---|---|
+| v1 | Original 290-line philosophical guide |
+| v2 | Structured output templates, exit gates |
+| v3 | Receipt + Recall memory system, hash verification |
+| v4 | 13 MCP tools mapped to all phases |
+| v5 | Ultrarag knowledge externalization, prompt library integration, OpenCode compatibility |
 
-The Kraken activates on: `build`, `implement`, `add feature`, `refactor`, `plan`, `design`,
-`architect`, `fix`, `debug`, `optimize`, `review`, `secure`, `improve`, `create`, `scaffold`,
-`setup`, `configure`, `deploy`, `migrate`, `code`, `develop`, `prototype`, `MVP`, `API`,
-`endpoint`, `component`, `page`, `module`, `service`, `model`, `schema`, `database`,
-`frontend`, `backend`, `fullstack`, `map this project`, `generate code`, `UI`, `UX`,
-`responsive`, `accessible`, `performance`, `security audit`, `threat model`, `OWASP`,
-`code smell`, `tech debt`, `clean up`, `test`, `TDD`, `coverage`, and more.
+## License
 
----
-
-## 📐 Key Standards Enforced
-
-- **Code:** Functions ≤20 lines, files ≤200 lines, nesting ≤3 levels, no magic numbers
-- **Complexity:** Cyclomatic ≤10, Cognitive ≤15 (mandatory refactor above thresholds)
-- **Security:** OWASP Top 10:2025, parameterized queries, no hardcoded secrets, STRIDE threat modeling
-- **Accessibility:** WCAG 2.2 AA, contrast ≥4.5:1, focus ≥2px, targets ≥44×44px
-- **Performance:** LCP ≤2.5s, INP ≤200ms, CLS ≤0.1, bundle ≤170KB gzipped
-- **Testing:** ≥80% branch coverage, coverage ratcheting, TDD for complex logic
-- **Design:** 8px grid, 3-tier design tokens, component state matrix for every component
-
----
-
-## 🧠 Research Foundation
-
-Built from industry-leading sources:
-- Google Engineering Practices (code review hierarchy)
-- OWASP Top 10:2025 (security controls)
-- Martin Fowler's Refactoring Catalog (complexity reduction)
-- WCAG 2.2 (accessibility standards)
-- Kent Beck's TDD (testing discipline)
-- Michael Nygard's ADR format (architecture decisions)
-- Core Web Vitals 2025 (performance budgets)
-- STRIDE/DREAD (threat modeling)
-- HikariCP pool sizing (backend optimization)
-
----
-
-## 📜 License
-
-MIT — Use it, fork it, make it yours.
+MIT License — see [LICENSE](LICENSE)
