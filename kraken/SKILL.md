@@ -110,12 +110,14 @@ Kraken runs on a 4-lane parallel scheduler. Every task inside a phase is classif
 
 ### Resource Classification
 
-Every tool call or sub-task is tagged **NET** or **LOCAL**:
+Every sub-task is tagged **NET** or **LOCAL** based on what it's waiting on:
 
-| Tag | Resource | Tools / Work | Bottleneck |
-|-----|----------|-------------|------------|
-| 🌐 **NET** | Internet / API | `ultrarag`, `gitmcp`, `postman` (remote), `playwright` (remote), `figma`, `shadcn-ui`, `browser-tools` (fetch), `openspec`, `npm install`, `git clone/fetch` | Bandwidth, latency |
-| 💻 **LOCAL** | CPU / Disk / RAM | `desktop-commander`, `git-mcp-server` (local ops), `sequential-thinking`, `cort`, `chrome-devtools`, file read/write, lint, compile, test run, code analysis | CPU cores, I/O |
+| Tag | Resource | Work Type | Bottleneck |
+|-----|----------|-----------|------------|
+| 🌐 **NET** | LLM Prompt (inference API) | Reasoning, code generation, analysis, security audit reasoning, design decisions, brainstorming, review passes | API latency, token throughput |
+| 💻 **LOCAL** | PC resources (CPU/Disk/RAM) | File read/write, `git` operations, compile, lint, test execution, profiling, directory scanning, dependency install, screenshot capture | CPU cores, disk I/O |
+
+**Key distinction:** MCP tools that run locally (desktop-commander, git-mcp-server, chrome-devtools) are 💻 LOCAL. The LLM reasoning that *decides what to do* with those tools is 🌐 NET.
 
 ### 4-Lane Architecture
 
@@ -125,48 +127,51 @@ Every tool call or sub-task is tagged **NET** or **LOCAL**:
 │                                                       │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐│
 │  │ LANE 1   │ │ LANE 2   │ │ LANE 3   │ │ LANE 4   ││
-│  │ 🌐 NET   │ │ 🌐 NET   │ │ 💻 LOCAL │ │ 💻 LOCAL ││
+│  │ 🌐 PROMPT│ │ 🌐 PROMPT│ │ 💻 PC-OP │ │ 💻 PC-OP ││
 │  │ PRIMARY  │ │ PRIMARY  │ │ PRIMARY  │ │ PRIMARY  ││
 │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘│
 │       │             │             │             │      │
 │       └──────┬──────┘             └──────┬──────┘      │
 │              │                           │              │
 │       ┌──────▼──────┐             ┌──────▼──────┐      │
-│       │  NET QUEUE   │             │ LOCAL QUEUE  │      │
-│       │  Priority: 1 │◄──overflow──│ Priority: 2  │      │
-│       └──────────────┘──overflow──►└──────────────┘      │
+│       │ PROMPT QUEUE │             │  PC-OP QUEUE │      │
+│       │ Priority: 1  │◄──overflow──│  Priority: 2 │      │
+│       │ (can preempt)│──overflow──►│ (never preempt)│    │
+│       └──────────────┘             └────────────────┘    │
 └─────────────────────────────────────────────────────┘
 ```
 
 ### Priority Rules
 
-**Rule 1: NET-first scheduling.**
-When a task needs internet (API call, ultrarag query, remote MCP), it claims a NET lane (1-2) immediately. If both NET lanes are busy, it preempts a LOCAL lane (3-4). Internet tasks NEVER wait behind local tasks.
+**Rule 1: PROMPT-first scheduling.**
+When a task needs LLM inference (reasoning, code generation, analysis), it claims a NET lane (1-2) immediately. If both NET lanes are busy, it preempts a LOCAL lane (3-4). Prompt tasks NEVER wait behind local tasks. Fire the prompt, then do local work while waiting for the response.
 
-**Rule 2: LOCAL-first for compute.**
-When a task needs CPU/disk (compile, lint, file ops, reasoning), it claims a LOCAL lane (3-4). If both LOCAL lanes are busy, it overflows to idle NET lanes. Local tasks never preempt active NET tasks.
+**Rule 2: LOCAL-fill while waiting.**
+When a prompt is in-flight (5-30s latency), immediately fill LOCAL lanes with file ops, git commands, linting, compilation, test runs. The CPU should never be idle while waiting for a prompt response.
 
 **Rule 3: Dependency gating.**
 A task cannot start until all its input dependencies have emitted results. No speculative execution on unverified data.
 
 **Rule 4: Starvation prevention.**
-No lane sits idle for >1 tick if there's queued work of ANY type. Idle NET lanes run LOCAL overflow. Idle LOCAL lanes run NET overflow.
+No lane sits idle for >1 tick if there's queued work of ANY type. Idle NET lanes run LOCAL overflow. Idle LOCAL lanes accept prompt overflow.
 
 ### Scheduling Algorithm
 
 ```
 EVERY PHASE ENTRY:
   1. List all sub-tasks for this phase
-  2. Tag each: 🌐 NET or 💻 LOCAL
+  2. Tag each: 🌐 PROMPT (needs LLM inference) or 💻 LOCAL (PC resource only)
   3. Build dependency graph (which tasks need results from which)
   4. Identify INDEPENDENT tasks (no deps on each other) → run parallel
   5. Assign to lanes by priority:
-     a. 🌐 NET tasks → Lanes 1-2 first, overflow to 3-4
-     b. 💻 LOCAL tasks → Lanes 3-4 first, overflow to 1-2
+     a. 🌐 PROMPT tasks → Lanes 1-2 first, overflow to 3-4, PREEMPT if needed
+     b. 💻 LOCAL tasks → Lanes 3-4 first, overflow to 1-2 if idle, NEVER preempt
   6. Execute wave. Wait for wave to complete.
   7. Feed results to dependent tasks → next wave.
   8. Repeat until phase complete.
 ```
+
+**Why PROMPT gets priority:** A prompt call takes 5-30 seconds of wall time (network + inference). A local file write takes <100ms. By firing prompts FIRST and running local ops WHILE waiting for responses, we maximize throughput. The LLM should never be idle while the CPU is busy.
 
 ### Phase Parallelism Maps
 
@@ -175,131 +180,147 @@ Each phase's internal tasks are grouped into **waves** — tasks in the same wav
 #### P1: RECEIVE
 ```
 Wave 1 (parallel):
-  🌐 L1: ultrarag "idea refinement [domain]" (if vague request)
-  💻 L3: sequential-thinking: parse request, classify type
-  💻 L4: cort: resolve ambiguities
-Wave 2 (sequential — needs Wave 1):
-  💻 L3: produce Requirement Card
+  🌐 L1: PROMPT — parse request, classify type, identify ambiguities
+  🌐 L2: PROMPT — generate clarifying questions + idea lenses
+  💻 L3: (idle — no local work yet)
+  💻 L4: (idle)
+Wave 2 (needs Wave 1 + user answers):
+  🌐 L1: PROMPT — produce Requirement Card with ACs
 ```
 
 #### P2: BRAINSTORM
 ```
-Wave 1 (parallel — all independent):
-  🌐 L1: ultrarag "[domain] architecture patterns"
-  🌐 L2: gitmcp: read upstream docs, dependency READMEs
-  💻 L3: desktop-commander: list project structure, read configs
-  💻 L4: git-mcp-server: branches, recent commits, status
-Wave 2 (parallel — needs Wave 1 results):
-  💻 L3: sequential-thinking: evaluate approaches with codebase context
-  💻 L4: produce approach comparison table
+Wave 1 (parallel — local recon while prompting):
+  🌐 L1: PROMPT — analyze domain, generate approach candidates
+  🌐 L2: PROMPT — evaluate codebase conventions from recon data
+  💻 L3: read project structure, configs, package.json / *.csproj
+  💻 L4: git log, git branch, read README/CLAUDE.md
+Wave 2 (needs Wave 1):
+  🌐 L1: PROMPT — compare approaches, pros/cons, complexity analysis
+  🌐 L2: PROMPT — justify recommendation, reject inferior approaches
+  💻 L3: read closest analog feature end-to-end (pattern template)
+  💻 L4: extract naming conventions from existing code
 ```
 
 #### P3: DECOMPOSE
 ```
 Wave 1 (parallel):
-  💻 L3: sequential-thinking: map slices to ACs
-  💻 L4: build dependency graph, define interfaces
+  🌐 L1: PROMPT — break solution into components, define interfaces
+  🌐 L2: PROMPT — map dependencies, assign layers, verify INVEST
+  💻 L3: (idle — pure reasoning phase)
+  💻 L4: (idle)
 ```
 
 #### P4: PLAN
 ```
 Wave 1 (parallel):
-  🌐 L1: ultrarag "planning methodology vertical slice [framework]"
-  🌐 L2: ultrarag "API contract design [framework]"
-  💻 L3: sequential-thinking: design pseudocode per slice
-  💻 L4: identify edge cases, error handling strategy
+  🌐 L1: PROMPT — write pseudocode per slice
+  🌐 L2: PROMPT — identify edge cases (min 5) + error handling strategy
+  💻 L3: scan existing DB schemas/migrations for reference
+  💻 L4: scan existing API endpoints for convention matching
 Wave 2 (needs Wave 1):
-  🌐 L1: openspec: generate OpenAPI spec
-  💻 L3: compile DB schema with indexes
-  💻 L4: verify plan completeness against checklist
+  🌐 L1: PROMPT — design DB schema with indexes + API specs
+  🌐 L2: PROMPT — define security annotations per slice
+  💻 L3: generate OpenAPI spec file (if tooling available)
+  💻 L4: write plan to docs/plans/
 ```
 
 #### P5: DESIGN-UI
 ```
 Wave 1 (parallel — FULL mode):
-  🌐 L1: ultrarag "WCAG 2.2 AA [component type]"
-  🌐 L2: figma: read design tokens, spacing, colors
-  💻 L3: shadcn-ui: search matching components
-  💻 L4: browser-tools: screenshot existing UI
+  🌐 L1: PROMPT — design component hierarchy + state matrix
+  🌐 L2: PROMPT — define a11y requirements (WCAG 2.2 AA)
+  💻 L3: screenshot existing UI for reference
+  💻 L4: search shadcn-ui for matching components
 Wave 2 (needs Wave 1):
-  🌐 L1: ultrarag "ARIA keyboard navigation [component type]"
-  💻 L3: build state matrix per component
-  💻 L4: define responsive breakpoints + a11y requirements
+  🌐 L1: PROMPT — define responsive breakpoints + error/empty/loading states
+  💻 L3: read figma tokens if available
 ```
 
 #### P6: IMPLEMENT
 ```
-Per SLICE (slices are sequential, but WITHIN each slice — parallel):
-Wave 1 (parallel):
-  🌐 L1: ultrarag "[design pattern] [framework] implementation"
-  🌐 L2: shadcn-ui: pull matched components (if UI slice)
-  💻 L3: desktop-commander: create type/model files
-  💻 L4: desktop-commander: create data access layer files
+Per SLICE (slices sequential, within each slice — parallel):
+Wave 1:
+  🌐 L1: PROMPT — generate type/model/DTO code
+  🌐 L2: PROMPT — generate data access / repository code
+  💻 L3: create directories + boilerplate files
+  💻 L4: install any new dependencies
 Wave 2 (needs Wave 1):
-  💻 L3: write service/logic layer
-  💻 L4: write controller/API layer
+  🌐 L1: PROMPT — generate service/logic layer code
+  🌐 L2: PROMPT — generate controller/API layer code
+  💻 L3: write Wave 1 generated code to files
+  💻 L4: run lint on Wave 1 files
 Wave 3 (needs Wave 2):
-  🌐 L1: postman: update API collection
-  💻 L3: write unit tests
-  💻 L4: run lint + compile check
+  🌐 L1: PROMPT — generate unit tests
+  🌐 L2: PROMPT — generate integration tests (if applicable)
+  💻 L3: write Wave 2 code to files + compile check
+  💻 L4: write Wave 2 code to files + lint
 Wave 4 (needs Wave 3):
-  💻 L3: git-mcp-server: stage + commit slice
-  💻 L4: verify build passes
+  💻 L3: run all tests
+  💻 L4: git stage + commit slice
 ```
 
 #### P7: SECURITY-AUDIT
 ```
-Wave 1 (parallel — all independent queries):
-  🌐 L1: ultrarag "OWASP top 10 [vulnerability] [framework]"
-  🌐 L2: ultrarag "threat modeling [feature] STRIDE attack scenarios"
-  💻 L3: sequential-thinking: model attack scenarios
-  💻 L4: static analysis: scan code for injection/XSS/auth gaps
-Wave 2 (parallel — needs Wave 1):
-  🌐 L1: postman: security-focused API tests (injection, auth bypass)
-  🌐 L2: playwright: test auth flows, CSRF, XSS via browser
-  💻 L3: fill OWASP Top 10 table with specific findings
-  💻 L4: build threat model (min 3 threats + mitigations)
-Wave 3 (sequential — needs Wave 2):
-  💻 L3: fix any ❌ findings, apply root cause analysis
+Wave 1 (parallel — reasoning + local scan):
+  🌐 L1: PROMPT — OWASP Top 10 analysis (A01-A05)
+  🌐 L2: PROMPT — OWASP Top 10 analysis (A06-A10)
+  💻 L3: grep code for known vulnerability patterns (eval, innerHTML, raw SQL)
+  💻 L4: scan for hardcoded secrets, check .env/.gitignore
+Wave 2 (needs Wave 1):
+  🌐 L1: PROMPT — build threat model (min 3 threats + mitigations)
+  🌐 L2: PROMPT — analyze auth flow, token storage, CSRF, rate limiting
+  💻 L3: run security linter if available (eslint-plugin-security, semgrep)
+  💻 L4: check dependency vulnerabilities (npm audit / dotnet list --vulnerable)
+Wave 3 (needs Wave 2):
+  🌐 L1: PROMPT — generate fixes for any ❌ findings
+  💻 L3: apply fixes to files
+  💻 L4: re-run security scan to verify fixes
 ```
 
 #### P8: REVIEW
 ```
 Wave 1 (parallel — independent review passes):
-  🌐 L1: ultrarag "code review checklist [framework]"
-  💻 L3: Pass 1 (Correctness) + Pass 2 (Pattern Compliance)
-  💻 L4: Pass 4 (Maintainability) + Pass 5 (Performance)
+  🌐 L1: PROMPT — Pass 1 (Correctness) + Pass 2 (Pattern Compliance)
+  🌐 L2: PROMPT — Pass 4 (Maintainability) + Pass 5 (Performance)
+  💻 L3: compute cyclomatic complexity metrics per function
+  💻 L4: count lines per file/function, detect code smells
 Wave 2 (needs Wave 1 + P7 receipt):
-  💻 L3: Pass 3 (Security cross-check against P7)
-  💻 L4: Pass 6 (Docs) + Pass 7 (Architecture)
-  🌐 L1: chrome-devtools: perf profiling (if UI)
-Wave 3 (sequential):
-  💻 L3: fix all blocking findings
+  🌐 L1: PROMPT — Pass 3 (Security cross-check against P7 OWASP table)
+  🌐 L2: PROMPT — Pass 6 (Docs) + Pass 7 (Architecture) + SOLID check
+  💻 L3: run profiler (chrome-devtools) if UI
+  💻 L4: verify all tests still pass after P7 fixes
+Wave 3 (needs Wave 2):
+  🌐 L1: PROMPT — generate fixes for blocking findings
+  💻 L3: apply fixes
+  💻 L4: re-run tests + lint
 ```
 
 #### P9: OPTIMIZE
 ```
 Wave 1 (parallel):
-  🌐 L1: ultrarag "performance optimization [framework] [bottleneck]"
-  🌐 L2: ultrarag "refactoring patterns [specific pattern]"
-  💻 L3: compute Big-O time + space complexity
-  💻 L4: chrome-devtools: baseline profiling (if UI)
+  🌐 L1: PROMPT — compute Big-O time complexity, verify vs requirements
+  🌐 L2: PROMPT — compute space complexity, identify bottlenecks
+  💻 L3: profile runtime if executable (benchmark test)
+  💻 L4: measure bundle size / memory usage if applicable
 Wave 2 (needs Wave 1):
-  💻 L3: apply optimizations, verify behavior unchanged
-  💻 L4: build caching strategy (TTLs, invalidation)
+  🌐 L1: PROMPT — design caching strategy (TTLs, invalidation, layers)
+  🌐 L2: PROMPT — evaluate 2-3 optimization candidates, decide apply/skip
+  💻 L3: apply approved optimizations to files
+  💻 L4: re-run tests to verify behavior unchanged
 ```
 
 #### P10: VERIFY
 ```
-Wave 1 (parallel — all independent test suites):
-  🌐 L1: playwright: E2E tests per AC
-  🌐 L2: postman: full API collection run
-  💻 L3: run unit + integration test suites
-  💻 L4: browser-tools: screenshot final result (if UI)
-Wave 2 (parallel — needs Wave 1):
-  🌐 L1: chrome-devtools: final performance audit
-  💻 L3: git-mcp-server: verify clean history
-  💻 L4: compile verification summary + ship checklist
+Wave 1 (parallel — tests run while prompt generates summary):
+  🌐 L1: PROMPT — generate test cases table (min 8, all categories)
+  🌐 L2: PROMPT — compile AC verification + ship checklist
+  💻 L3: run full test suite (unit + integration + e2e)
+  💻 L4: run final lint + compile + git status check
+Wave 2 (needs Wave 1):
+  🌐 L1: PROMPT — produce final deliverable summary + rollback plan
+  💻 L3: screenshot final result (if UI)
+  💻 L4: git verify clean history, no uncommitted changes
 ```
 
 ### Cross-Phase Parallelism (Pipeline Overlap)
@@ -354,12 +375,12 @@ When all 4 lanes are busy and new work arrives:
 
 | New task | Lanes 1-2 (NET) | Lanes 3-4 (LOCAL) | Action |
 |----------|-----------------|-------------------|--------|
-| 🌐 NET | Busy | Busy | **Preempt lowest-priority LOCAL task** on Lane 3 or 4. Paused LOCAL task resumes when a lane frees. |
-| 🌐 NET | Busy | Idle | Run on Lane 3 or 4 (overflow). |
-| 💻 LOCAL | Idle | Busy | Run on Lane 1 or 2 (overflow). |
-| 💻 LOCAL | Busy | Busy | **Queue**. LOCAL never preempts NET. Wait for any lane to free. |
+| 🌐 PROMPT | Busy | Busy | **Preempt lowest-priority LOCAL task** on Lane 3 or 4. Paused LOCAL resumes when a lane frees. |
+| 🌐 PROMPT | Busy | Idle | Run on Lane 3 or 4 (overflow). |
+| 💻 PC-OP | Idle | Busy | Run on Lane 1 or 2 (overflow). |
+| 💻 PC-OP | Busy | Busy | **Queue**. LOCAL never preempts PROMPT. Wait for any lane to free. |
 
-**NET preempts LOCAL, never the reverse.** This ensures API calls (highest latency) are never blocked by local compute.
+**PROMPT preempts LOCAL, never the reverse.** LLM inference is the highest-latency operation — prompt calls must never wait behind a file write or lint run.
 
 ---
 
