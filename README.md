@@ -1,6 +1,6 @@
 # 🦑 The Kraken v6 — Agent Skills Edition
 
-A 10-phase development pipeline skill that works across **OpenCode**, **Claude Code**, and **Codex**. Uses MCP tools at every phase, retrieves domain knowledge on-demand through ultrarag, and now integrates anti-rationalization engines, agent personas, and 19 production-grade engineering workflows from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills).
+A 10-phase development pipeline skill that works across **OpenCode**, **Claude Code**, and **Codex**. Uses MCP tools at every phase, retrieves domain knowledge on-demand through vector-mcp-go, and now integrates anti-rationalization engines, agent personas, and 19 production-grade engineering workflows from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills).
 
 ## Architecture
 
@@ -43,7 +43,7 @@ Every phase:
 | Design | `figma`, `shadcn-ui` | P5, P6 |
 | API | `openspec`, `postman` | P4-P7, P10 |
 | Testing | `playwright`, `browser-tools`, `chrome-devtools` | P5, P7-P10 |
-| Knowledge | `ultrarag` | P2, P4-P9 |
+| Knowledge | `vector-mcp-go` | P2, P4-P9 |
 
 ## Installation
 
@@ -90,11 +90,11 @@ cp /path/to/krakenSkill/kraken/SKILL.md .agents/skills/kraken/
 
 ## UltraRAG Setup (Optional but Recommended)
 
-The `knowledge/` directory contains 7 documents designed for ultrarag ingestion. Without ultrarag, the skill uses built-in model knowledge as fallback.
+The `knowledge/` directory contains 7 documents designed for vector-mcp-go ingestion. Without vector-mcp-go, the skill uses built-in model knowledge as fallback.
 
 ### Setup Steps
 
-1. Ensure your ultrarag Docker container is running
+1. Ensure your vector-mcp-go Docker container is running
 2. Ingest the knowledge files:
    - Create a collection named `kraken-knowledge`
    - Upload all 7 files from `knowledge/`

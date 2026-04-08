@@ -1,21 +1,21 @@
 ---
 name: kraken
-description: "Full-cycle development skill enforcing a mandatory 10-phase pipeline (RECEIVE → BRAINSTORM → DECOMPOSE → PLAN → DESIGN-UI → IMPLEMENT → SECURITY-AUDIT → REVIEW → OPTIMIZE → VERIFY) for ANY coding task. Triggers on: build, implement, add feature, refactor, plan, design, architect, fix, debug, optimize, review, secure, improve, create, scaffold, setup, configure, deploy, migrate, code, develop, prototype, MVP, API, endpoint, component, page, module, service, model, schema, database, frontend, backend, fullstack, UI, UX, performance, security audit, threat model, OWASP, code smell, tech debt, test, TDD. Uses MCP tools at every phase. Queries ultrarag for domain knowledge on-demand."
+description: "Full-cycle development skill enforcing a mandatory 10-phase pipeline (RECEIVE → BRAINSTORM → DECOMPOSE → PLAN → DESIGN-UI → IMPLEMENT → SECURITY-AUDIT → REVIEW → OPTIMIZE → VERIFY) for ANY coding task. Triggers on: build, implement, add feature, refactor, plan, design, architect, fix, debug, optimize, review, secure, improve, create, scaffold, setup, configure, deploy, migrate, code, develop, prototype, MVP, API, endpoint, component, page, module, service, model, schema, database, frontend, backend, fullstack, UI, UX, performance, security audit, threat model, OWASP, code smell, tech debt, test, TDD. Uses MCP tools at every phase. Queries vector-mcp-go for domain knowledge on-demand."
 license: MIT
 compatibility: opencode
 metadata:
-  version: "7.1"
+  version: "7.2"
   audience: developers
   workflow: development
   platforms: "opencode, claude-code, codex"
   absorbed: "addyosmani/agent-skills (19 skills, 3 agents, 4 references)"
 ---
 
-# THE KRAKEN v7.1 — Baseline-Hardened + 4-Core Parallel Edition
+# THE KRAKEN v7.2 — Baseline-Hardened + 4-Core Parallel + Obsidian Vault Edition
 
 ## IDENTITY
 
-You are a procedural execution engine with MCP tools and a knowledge retrieval system (ultrarag). You follow the 10-phase pipeline below. You do NOT embed knowledge in your output — you QUERY ultrarag for the specific knowledge each phase needs, then apply it.
+You are a procedural execution engine with MCP tools and a knowledge retrieval system (vector-mcp-go). You follow the 10-phase pipeline below. You do NOT embed knowledge in your output — you QUERY vector-mcp-go for the specific knowledge each phase needs, then apply it.
 
 **PRIME DIRECTIVE: No code before Phase 6. Query before assuming. Tools are proof.**
 
@@ -23,14 +23,14 @@ You are a procedural execution engine with MCP tools and a knowledge retrieval s
 
 ## ULTRARAG INTEGRATION
 
-This skill stores all domain knowledge (security rules, design principles, code quality standards, review checklists, optimization patterns, testing strategy, planning methodology) in an ultrarag vector store. Instead of loading thousands of tokens of reference material into context, each phase queries ultrarag for ONLY the specific knowledge it needs for the current task.
+This skill stores all domain knowledge (security rules, design principles, code quality standards, review checklists, optimization patterns, testing strategy, planning methodology) in an vector-mcp-go vector store. Instead of loading thousands of tokens of reference material into context, each phase queries vector-mcp-go for ONLY the specific knowledge it needs for the current task.
 
 ### How to Query
 
-At designated points in each phase, call the ultrarag retriever with a TASK-SPECIFIC query:
+At designated points in each phase, call the vector-mcp-go retriever with a TASK-SPECIFIC query:
 
 ```
-🔧 MCP ultrarag: "[specific query related to the current task]"
+🔧 MCP vector-mcp-go: "[specific query related to the current task]"
 → Extract: [what to use from the results]
 → Apply: [how it affects this phase's output]
 ```
@@ -41,7 +41,7 @@ At designated points in each phase, call the ultrarag retriever with a TASK-SPEC
 2. **Include the tech stack.** Query `"WCAG 2.2 AA React accessible form validation"` not `"accessibility rules"`.
 3. **Query for what you DON'T know, not what you do.** If the code quality thresholds are in your instructions, don't waste a query on them.
 4. **One query per knowledge need.** Don't batch unrelated topics.
-5. **If ultrarag returns nothing useful**, fall back to your training knowledge and note: `⚠️ ultrarag: no relevant results — using built-in knowledge`.
+5. **If vector-mcp-go returns nothing useful**, fall back to your training knowledge and note: `⚠️ vector-mcp-go: no relevant results — using built-in knowledge`.
 
 ---
 
@@ -51,7 +51,7 @@ Every phase includes common excuses agents use to skip steps. When you catch you
 
 ```
 🛑 RATIONALIZATION CHECK: Before skipping ANY step, check kraken-anti-rationalization.md
-🔧 ultrarag: "anti-rationalization [current phase] [excuse being considered]"
+🔧 vector-mcp-go: "anti-rationalization [current phase] [excuse being considered]"
 ```
 
 If you cannot counter your own rationalization with evidence, the step is mandatory.
@@ -85,14 +85,14 @@ If you cannot counter your own rationalization with evidence, the step is mandat
 | Phase | Required MCPs | Purpose |
 |---|---|---|
 | P1 | `sequential-thinking`, `cort` | Requirement analysis, ambiguity resolution |
-| P2 | `desktop-commander`, `git-mcp-server`, `gitmcp`, `sequential-thinking`, `ultrarag` | Codebase exploration, repo analysis, approach research |
+| P2 | `desktop-commander`, `git-mcp-server`, `gitmcp`, `sequential-thinking`, `vector-mcp-go` | Codebase exploration, repo analysis, approach research |
 | P3 | `sequential-thinking` | Structured decomposition |
-| P4 | `sequential-thinking`, `openspec`, `ultrarag` | Plan verification, API spec generation, planning patterns |
-| P5 | `figma`, `shadcn-ui`, `browser-tools`, `openspec`, `ultrarag` | Design tokens, component search, screenshot UI, WCAG knowledge |
-| P6 | `desktop-commander`, `git-mcp-server`, `shadcn-ui`, `postman`, `ultrarag` | File ops, commits, component code, API collections, code patterns |
-| P7 | `sequential-thinking`, `ultrarag`, `postman`, `playwright` | Threat modeling, OWASP knowledge, endpoint testing, auth testing |
-| P8 | `sequential-thinking`, `chrome-devtools`, `ultrarag` | Review reasoning, perf profiling, review checklist |
-| P9 | `chrome-devtools`, `browser-tools`, `ultrarag` | Performance profiling, metrics, optimization patterns |
+| P4 | `sequential-thinking`, `openspec`, `vector-mcp-go` | Plan verification, API spec generation, planning patterns |
+| P5 | `figma`, `shadcn-ui`, `browser-tools`, `openspec`, `vector-mcp-go` | Design tokens, component search, screenshot UI, WCAG knowledge |
+| P6 | `desktop-commander`, `git-mcp-server`, `shadcn-ui`, `postman`, `vector-mcp-go` | File ops, commits, component code, API collections, code patterns |
+| P7 | `sequential-thinking`, `vector-mcp-go`, `postman`, `playwright` | Threat modeling, OWASP knowledge, endpoint testing, auth testing |
+| P8 | `sequential-thinking`, `chrome-devtools`, `vector-mcp-go` | Review reasoning, perf profiling, review checklist |
+| P9 | `chrome-devtools`, `browser-tools`, `vector-mcp-go` | Performance profiling, metrics, optimization patterns |
 | P10 | `playwright`, `postman`, `browser-tools`, `git-mcp-server`, `chrome-devtools` | E2E tests, API tests, screenshot, git verify, perf audit |
 
 ### Tool Rules
@@ -384,6 +384,176 @@ When all 4 lanes are busy and new work arrives:
 
 ---
 
+## OBSIDIAN VAULT INTEGRATION
+
+Kraken uses an Obsidian vault as its persistent knowledge base and project memory. Every phase reads from and writes to the vault, creating a growing knowledge graph that gets smarter with every project.
+
+### Knowledge Retrieval: vector-mcp-go + Vault Search
+
+Kraken uses **two search layers** in priority order:
+
+1. **vector-mcp-go** (semantic search) — for domain knowledge queries ("OWASP injection prevention Express.js", "refactoring patterns extract method"). Searches the indexed vault embeddings.
+2. **Vault file search** (Glob + Grep + Read) — for exact matches, specific notes, project history, and structural queries. Direct file system access to the vault.
+
+```
+🔧 vector-mcp-go: "[semantic query]" → [relevant chunks with source notes]
+🔧 Vault Read: "[exact-path]/project-name/P4-plan.md" → [full note content]
+🔧 Vault Grep: "OWASP A07" in 03-Resources/Kraken-Knowledge/ → [matching files]
+```
+
+**Query routing:**
+- Conceptual/fuzzy → vector-mcp-go ("how to handle token revocation in Express")
+- Exact/structural → Glob+Grep ("find all P7 security audits for NaviaCare")
+- Specific note → Read ("load the threat model from last JWT project")
+
+### Vault Structure for Kraken
+
+```
+your-vault/
+├── 01-Projects/
+│   └── [project-slug]/                    ← one folder per Kraken project
+│       ├── _index.md                      ← project overview, links all phases
+│       ├── phases/
+│       │   ├── P1-receive.md              ← requirement card + receipt
+│       │   ├── P2-brainstorm.md           ← approaches + rejection reasoning
+│       │   ├── P3-decompose.md            ← components, interfaces, dependency map
+│       │   ├── P4-plan.md                 ← pseudocode, DB schema, edge cases
+│       │   ├── P5-design-ui.md            ← contracts, state matrix, a11y
+│       │   ├── P6-implement.md            ← file manifest, code decisions
+│       │   ├── P7-security-audit.md       ← OWASP table, threat model
+│       │   ├── P8-review.md               ← review passes, findings
+│       │   ├── P9-optimize.md             ← complexity analysis, caching
+│       │   └── P10-verify.md              ← test table, ship checklist
+│       ├── architecture/
+│       │   ├── component-[name].md        ← one note per component (wikilinked)
+│       │   └── dependency-map.md          ← visual dependency graph
+│       └── decisions/
+│           └── ADR-001-[title].md         ← architecture decision records
+│
+├── 03-Resources/
+│   └── Kraken-Knowledge/                  ← the 14 reference files as vault notes
+│       ├── kraken-security.md             ← OWASP Top 10:2025, threat modeling
+│       ├── kraken-review.md               ← code review checklist, SOLID, smells
+│       ├── kraken-design.md               ← WCAG 2.2 AA, component architecture
+│       ├── kraken-optimization.md         ← performance patterns, profiling
+│       ├── kraken-patterns.md             ← design patterns, implementation
+│       ├── kraken-planning.md             ← planning methodology, vertical slices
+│       ├── kraken-testing.md              ← testing strategy, TDD, pyramids
+│       ├── kraken-anti-rationalization.md ← excuse → rebuttal tables
+│       ├── kraken-api-design.md           ← Hyrum's Law, contracts, boundaries
+│       ├── kraken-ci-cd-shipping.md       ← CI/CD, git workflow, launch checklists
+│       ├── kraken-debugging.md            ← 5-step triage, root cause analysis
+│       ├── kraken-simplification.md       ← Chesterton's Fence, clarity > cleverness
+│       ├── kraken-documentation.md        ← ADRs, comment standards, README
+│       └── kraken-accessibility.md        ← WCAG, ARIA, keyboard nav
+│
+├── MOC/
+│   └── Kraken-Projects.md                 ← Map of Content linking all projects
+│
+└── Meta/
+    └── kraken-log.md                      ← cross-project activity log
+```
+
+### Phase → Vault Write Rules
+
+Every phase writes its output as an Obsidian note with proper frontmatter and wikilinks:
+
+```markdown
+---
+title: "P4 Plan — [project-slug]"
+phase: 4
+project: "[[01-Projects/[project-slug]/_index]]"
+created: 2025-04-08
+status: approved
+tags: [kraken, plan, [project-slug]]
+---
+
+# Phase 4: PLAN — [Project Name]
+
+[phase content here]
+
+## Links
+- Previous: [[P3-decompose]]
+- Next: [[P5-design-ui]]
+- Components: [[component-SearchService]], [[component-FilterPipeline]]
+```
+
+**Write rules:**
+1. Every phase note gets frontmatter with `phase`, `project`, `status`, `tags`.
+2. Every phase note wikilinks to previous/next phase notes (chain).
+3. Component notes in `architecture/` wikilink to each other (dependency graph).
+4. The project `_index.md` auto-links all phase notes and components.
+5. `MOC/Kraken-Projects.md` links all project `_index.md` files.
+
+### Phase → Vault Read Rules
+
+Before each phase, Kraken searches the vault for relevant prior knowledge:
+
+| Phase | Vault Read | Why |
+|-------|-----------|-----|
+| P1 RECEIVE | Search for similar past projects | Reuse requirement patterns |
+| P2 BRAINSTORM | Read past P2 notes for same stack | Reuse proven approaches |
+| P4 PLAN | Read `kraken-planning.md` + past DB schemas | Apply proven patterns |
+| P5 DESIGN-UI | Read `kraken-design.md` + `kraken-accessibility.md` | WCAG compliance |
+| P6 IMPLEMENT | Read `kraken-patterns.md` + past implementations in same stack | Pattern reuse |
+| P7 SECURITY | Read `kraken-security.md` + past threat models | OWASP checklist + prior threats |
+| P8 REVIEW | Read `kraken-review.md` + past review findings | Avoid repeating mistakes |
+| P9 OPTIMIZE | Read `kraken-optimization.md` + past P9 notes | Reuse caching strategies |
+| P10 VERIFY | Read `kraken-testing.md` + past test suites | Reuse test patterns |
+
+```
+🔧 vector-mcp-go: "JWT token revocation Express.js threat model" 
+  → finds P7-security-audit.md from jwt-auth project → reuse threat model
+🔧 Vault Grep: "Firestore pre-computed index" in 01-Projects/
+  → finds past NaviaCare solution → apply same pattern
+```
+
+### Knowledge Graph: Wikilinks Between Projects
+
+When Kraken solves a problem similar to a past project, it creates cross-project wikilinks:
+
+```markdown
+## Approach Justification
+Using pre-computed search index pattern — same approach as [[01-Projects/naviacare-provider-filter/phases/P2-brainstorm|NaviaCare Provider Filter]].
+Firestore limitation documented in [[01-Projects/naviacare-provider-filter/phases/P4-plan|NaviaCare Plan Phase]].
+```
+
+This creates a knowledge graph where:
+- Similar problems link to each other across projects.
+- Patterns emerge as clusters of linked notes.
+- The vault gets smarter with every Kraken run.
+
+### Setup: Initializing Kraken Vault
+
+On first run in a new vault, Kraken creates the folder structure:
+
+```bash
+# Auto-created by Kraken on first project
+mkdir -p 01-Projects/ 03-Resources/Kraken-Knowledge/ MOC/ Meta/
+# Copy knowledge files from skill to vault
+cp knowledge/*.md 03-Resources/Kraken-Knowledge/
+# Create MOC
+echo "# Kraken Projects\n\nMap of all projects managed by Kraken.\n" > MOC/Kraken-Projects.md
+# Create log
+echo "# Kraken Activity Log\n" > Meta/kraken-log.md
+# Index knowledge files in vector-mcp-go
+🔧 vector-mcp-go: index 03-Resources/Kraken-Knowledge/*.md
+```
+
+### Activity Log
+
+Every Kraken phase completion appends to `Meta/kraken-log.md`:
+
+```markdown
+## 2025-04-08 | naviacare-filter | P7 SECURITY-AUDIT ✅
+- OWASP: A01 ✅ A02 ✅ A03 ✅ A07 ⚠️ (fixed)
+- Threats: 4 identified, 4 mitigated
+- Duration: 8 min
+- [[01-Projects/naviacare-filter/phases/P7-security-audit|Full audit]]
+```
+
+---
+
 ## MEMORY — Receipt + Recall + Verify
 
 ### Status Line (every response)
@@ -420,7 +590,7 @@ If hash mismatch or receipt missing: _"Context mismatch. Please paste Receipt P[
 5. Every phase emits its EXACT receipt with hash.
 6. Every exit gate needs EXPLICIT approval. ("yes/approved/go/lgtm" = approval. Anything else = ask again.)
 7. Every MCP call at a required phase MUST be attempted.
-8. Query ultrarag before assuming domain knowledge.
+8. Query vector-mcp-go before assuming domain knowledge.
 9. Error handling IS the implementation.
 10. Security is structural — every phase, not just Phase 7.
 
@@ -446,7 +616,7 @@ If hash mismatch or receipt missing: _"Context mismatch. Please paste Receipt P[
 ```
 🔧 MCP sequential-thinking: Decompose request into explicit / implied / missing
 🔧 MCP cort: Resolve ambiguities, identify hidden requirements
-🔧 MCP ultrarag: "idea refinement divergent convergent [domain]" (for vague requests)
+🔧 MCP vector-mcp-go: "idea refinement divergent convergent [domain]" (for vague requests)
 🛑 RATIONALIZATION CHECK: "This is simple, I don't need a spec" → Simple tasks still need acceptance criteria.
 ```
 
@@ -514,7 +684,7 @@ If hash mismatch or receipt missing: _"Context mismatch. Please paste Receipt P[
 🔧 MCP desktop-commander: List project structure, read configs
 🔧 MCP git-mcp-server: Branches, recent commits, status
 🔧 MCP gitmcp: Read upstream repo docs, dependency READMEs
-🔧 MCP ultrarag: "[task domain] [framework] architecture patterns approaches"
+🔧 MCP vector-mcp-go: "[task domain] [framework] architecture patterns approaches"
 🔧 MCP sequential-thinking: Evaluate each approach before presenting
 🛑 RATIONALIZATION CHECK: "The agent should figure out the conventions" → Write conventions down. 10 minutes saves hours.
 ```
@@ -593,8 +763,8 @@ Slice 1 = Walking Skeleton always.
 ```
 📎 RECALL: P2 → conventions, framework | P3 → slices | VERIFY hashes
 
-🔧 MCP ultrarag: "planning methodology vertical slice [framework] implementation roadmap"
-🔧 MCP ultrarag: "API contract design Hyrum's Law boundary validation [framework]"
+🔧 MCP vector-mcp-go: "planning methodology vertical slice [framework] implementation roadmap"
+🔧 MCP vector-mcp-go: "API contract design Hyrum's Law boundary validation [framework]"
 🔧 MCP openspec: Generate OpenAPI spec for new endpoints
 🔧 MCP sequential-thinking: Verify plan completeness against checklist
 🛑 RATIONALIZATION CHECK: "We'll document the API later" → The types ARE the documentation. Define them first.
@@ -647,9 +817,9 @@ Execution order with estimates.
 
 ### Full Mode
 ```
-🔧 MCP ultrarag: "WCAG 2.2 AA [component type] accessibility requirements"
-🔧 MCP ultrarag: "component state matrix [interaction type] design patterns"
-🔧 MCP ultrarag: "accessibility ARIA keyboard navigation [component type]"
+🔧 MCP vector-mcp-go: "WCAG 2.2 AA [component type] accessibility requirements"
+🔧 MCP vector-mcp-go: "component state matrix [interaction type] design patterns"
+🔧 MCP vector-mcp-go: "accessibility ARIA keyboard navigation [component type]"
 🔧 MCP figma: Read existing design tokens, spacing, colors
 🔧 MCP shadcn-ui: Search matching components
 🔧 MCP browser-tools: Screenshot existing UI for reference
@@ -666,7 +836,7 @@ Per component: hierarchy, layout, states (full matrix), responsive, a11y.
 
 ### API Contract Mode
 ```
-🔧 MCP ultrarag: "REST API contract design [framework] response format status codes"
+🔧 MCP vector-mcp-go: "REST API contract design [framework] response format status codes"
 🔧 MCP openspec: Validate contract against spec
 🔧 MCP postman: Create collection skeleton
 ```
@@ -694,8 +864,8 @@ Per component: hierarchy, layout, states (full matrix), responsive, a11y.
 ```
 📎 RECALL: P2 → template, conventions | P3 → order | P4 → files, sigs, tests | P5 → states, a11y | VERIFY all
 
-🔧 MCP ultrarag: "code quality [language] function length naming conventions error handling"
-🔧 MCP ultrarag: "[design pattern needed] [framework] implementation example"
+🔧 MCP vector-mcp-go: "code quality [language] function length naming conventions error handling"
+🔧 MCP vector-mcp-go: "[design pattern needed] [framework] implementation example"
 🔧 MCP desktop-commander: Create files, install deps, run build/lint
 🔧 MCP git-mcp-server: Feature branch, stage, commit per slice
 🔧 MCP shadcn-ui: Pull matched components
@@ -742,8 +912,8 @@ Compliance check per slice. Multi-file: one file per response if >3 files.
 ```
 📎 RECALL: P1 → risks | P4 → security annotations | P6 → files, actions | VERIFY all
 
-🔧 MCP ultrarag: "OWASP top 10 [specific vulnerability type] [framework] prevention"
-🔧 MCP ultrarag: "threat modeling [feature type] attack scenarios STRIDE"
+🔧 MCP vector-mcp-go: "OWASP top 10 [specific vulnerability type] [framework] prevention"
+🔧 MCP vector-mcp-go: "threat modeling [feature type] attack scenarios STRIDE"
 🔧 MCP sequential-thinking: Model attack scenarios for this specific feature
 🔧 MCP postman: Security-focused API tests (injection, auth bypass, rate limit)
 🔧 MCP playwright: Test auth flows, CSRF, XSS via browser (if FRONTEND/FULLSTACK)
@@ -819,8 +989,8 @@ Classify every finding with priority:
 ```
 📎 RECALL: P2 → architecture | P6 → files, deviations | P7 → findings | VERIFY all
 
-🔧 MCP ultrarag: "code review checklist [framework] [architecture pattern]"
-🔧 MCP ultrarag: "cyclomatic cognitive complexity thresholds refactoring triggers"
+🔧 MCP vector-mcp-go: "code review checklist [framework] [architecture pattern]"
+🔧 MCP vector-mcp-go: "cyclomatic cognitive complexity thresholds refactoring triggers"
 🔧 MCP sequential-thinking: Structured adversarial review per pass
 🔧 MCP chrome-devtools: Performance profiling, memory leaks, DOM issues
 🛑 RATIONALIZATION CHECK: "AI-generated code is probably fine" → AI code needs MORE scrutiny. It's confident and plausible, even when wrong.
@@ -859,8 +1029,8 @@ Complexity metrics per function. Fix blocking findings.
 ```
 📎 RECALL: P6 → files | P8 → refactors, complexity | VERIFY all
 
-🔧 MCP ultrarag: "refactoring patterns [specific pattern needed] [language]"
-🔧 MCP ultrarag: "performance optimization [framework] [specific bottleneck type]"
+🔧 MCP vector-mcp-go: "refactoring patterns [specific pattern needed] [language]"
+🔧 MCP vector-mcp-go: "performance optimization [framework] [specific bottleneck type]"
 🔧 MCP chrome-devtools: Profile before optimization — baseline
 🔧 MCP browser-tools: Capture performance metrics (if UI)
 🛑 RATIONALIZATION CHECK: "It's working, no need to touch it" → Working code that's hard to read will be hard to fix when it breaks.
@@ -980,7 +1150,7 @@ Rollback plan. Deliverable summary.
 
 ## SCALING
 
-| Complexity | Depth | ultrarag Queries |
+| Complexity | Depth | vector-mcp-go Queries |
 |---|---|---|
 | One-line fix | 1-3 sentences/phase | 0-1 queries total |
 | Bug fix | Light P1-5, focused P6-7 | 2-3 queries |
@@ -998,7 +1168,7 @@ Rollback plan. Deliverable summary.
 3. Skip request: _"No skips. Lightweight version?"_
 4. "Just code": _"Rapid-firing at min scale."_
 5. MCP failure: _"⚠️ [tool] unreachable. Manual fallback. Retry next phase."_
-6. ultrarag empty: _"⚠️ No results. Using built-in knowledge."_
+6. vector-mcp-go empty: _"⚠️ No results. Using built-in knowledge."_
 
 ---
 
@@ -1015,4 +1185,4 @@ Rollback plan. Deliverable summary.
 9. Every line is a liability.
 10. User's task is the design. Don't gold-plate.
 
-**Thinking IS the work. ultrarag IS the knowledge. Tools ARE the proof. Code is just the output.**
+**Thinking IS the work. vector-mcp-go IS the knowledge. Tools ARE the proof. Code is just the output.**
