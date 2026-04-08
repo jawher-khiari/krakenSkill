@@ -4,14 +4,14 @@ description: "Full-cycle development skill enforcing a mandatory 10-phase pipeli
 license: MIT
 compatibility: opencode
 metadata:
-  version: "6.0"
+  version: "7.0"
   audience: developers
   workflow: development
   platforms: "opencode, claude-code, codex"
   absorbed: "addyosmani/agent-skills (19 skills, 3 agents, 4 references)"
 ---
 
-# THE KRAKEN v6 — Agent Skills Edition
+# THE KRAKEN v7 — Baseline-Hardened Edition
 
 ## IDENTITY
 
@@ -241,7 +241,12 @@ If hash mismatch or receipt missing: _"Context mismatch. Please paste Receipt P[
 
 1. Codebase Recon → report framework, patterns, conventions, pattern template.
 2. Generate 3 approaches with ratings (🟢/🟡/🔴) per criterion.
-3. Recommendation with trade-off analysis.
+3. **Explicitly REJECT inferior approaches with specific reasoning:**
+   - "Approach 2 is O(m+n) — violates O(log n) requirement. REJECTED."
+   - "Approach 3 stores tokens in localStorage — XSS vulnerable. REJECTED."
+4. Recommendation with trade-off analysis.
+
+⚠️ "Approach B is worse" without specific reason = FAIL. State WHY (complexity, security, maintainability).
 
 ### Receipt P2
 ```
@@ -272,6 +277,21 @@ If hash mismatch or receipt missing: _"Context mismatch. Please paste Receipt P[
 Per slice: delivers, layers, depends on, size, proves which AC, test.
 Slice 1 = Walking Skeleton always.
 
+### Mandatory Outputs (from baseline quality bar)
+
+1. **Component List** — minimum 3 for non-trivial tasks, each with:
+   - Name and single-sentence responsibility (SRP).
+   - Public interface: typed function signatures (params + return type).
+2. **Dependency Map** — show which components call which:
+   ```
+   ComponentA
+     ├─→ uses ComponentB
+     └─→ calls ComponentC
+   ```
+3. **Layer assignment** — where each component sits (Controller / Service / Repository / UI).
+
+⚠️ Interfaces must include parameter types and return types. Vague signatures like `process(data)` = FAIL.
+
 ### Receipt P3
 ```
 ┌─ RECEIPT P3 ──────────────────────────────┐
@@ -301,6 +321,18 @@ Slice 1 = Walking Skeleton always.
 ```
 
 Per slice: files, signatures, deps, test cases (BEFORE code), security annotation, UI states, perf notes.
+
+### Mandatory Quality Bar (from baseline)
+
+1. **Pseudocode** — detailed enough to implement line-by-line, not hand-wavy.
+2. **Edge cases — MINIMUM 5** with specific input examples (not vague descriptions):
+   - Empty/null inputs, boundary values, error/failure scenarios, duplicates, concurrency (if applicable).
+3. **Database schema** (if applicable) — table/collection definitions with field types AND indexes.
+   - For NoSQL: explicitly address platform limitations (e.g., "Firestore can't join → use pre-computed index collection").
+4. **Error handling strategy** — what errors can occur at each layer, how each is surfaced.
+5. **Assumptions** — list explicitly with preconditions and postconditions.
+
+⚠️ Edge cases with just "handle errors" = FAIL. Each must have specific input → expected behavior.
 
 **API Design Gate** (for BACKEND/FULLSTACK): Before proceeding, verify against `kraken-api-design.md`:
 - Every endpoint has typed input/output schemas
@@ -446,6 +478,35 @@ Compliance check per slice. Multi-file: one file per response if >3 files.
 Classify threat level → route passes (LOW: 1,4,6 | MEDIUM+: all 9).
 Per pass: applies, checked, status (✅/⚠️/❌), MCP evidence, fix if ❌.
 
+### Mandatory OWASP Top 10 Table (ALWAYS produce this — never skip)
+
+| OWASP | Category | Status | Specific Finding |
+|-------|----------|--------|-----------------|
+| A01 | Broken Access Control | ✅/❌ | [concrete finding or "N/A — no endpoints"] |
+| A02 | Cryptographic Failures | ✅/❌ | [concrete finding] |
+| A03 | Injection | ✅/❌ | [concrete finding] |
+| A04 | Insecure Design | ✅/❌ | [concrete finding] |
+| A05 | Security Misconfiguration | ✅/❌ | [concrete finding] |
+| A06 | Vulnerable Components | ✅/❌ | [concrete finding] |
+| A07 | Auth Failures | ✅/❌ | [concrete finding] |
+| A08 | Data Integrity Failures | ✅/❌ | [concrete finding] |
+| A09 | Logging & Monitoring | ✅/❌ | [concrete finding] |
+| A10 | SSRF | ✅/❌ | [concrete finding] |
+
+⚠️ At least 3 categories must have SUBSTANTIVE analysis, not just "N/A". Shallow = FAIL.
+
+### Mandatory Threat Model (minimum 3 threats for auth/data features)
+
+Per threat: description, attack vector, mitigation implemented.
+For auth features: token storage (httpOnly cookies, NOT localStorage), CSRF protection (SameSite), rate limiting, token revocation/blacklist.
+
+### For Algorithmic Problems (non-web)
+- Input validation (bounds, types, empty inputs).
+- Integer overflow / underflow analysis with specific calculations.
+- Boundary sentinel values handling (e.g., -Infinity/+Infinity).
+- Algorithm termination proof (loop invariant + convergence).
+- Resource consumption: time O(?) and space O(?) — can attacker trigger worst case?
+
 For each ❌ FAIL, apply bug-hunter root cause analysis:
 1. **Root Cause:** WHY does this vulnerability exist? Specific code/design flaw.
 2. **Fix:** Before/after code with explanation.
@@ -534,6 +595,18 @@ Complexity metrics per function. Fix blocking findings.
 Per optimization: type, location, before/after, behavior unchanged proof, impact.
 Rule of Three check. Compression results table.
 
+### Mandatory Complexity Analysis (ALWAYS produce — never skip)
+
+1. **Time Complexity**: State Big-O. Break down per-component if different. Verify against RECEIVE requirements.
+2. **Space Complexity**: Memory allocation, stack depth, total O(?).
+3. **Bottleneck Identification**: Slowest part + justification (acceptable or not).
+4. **Caching Strategy** (for web/API features — MANDATORY):
+   - What to cache, at what layer, TTL with justification, invalidation strategy.
+   - Example: "Cache search results 1 min, availability data 5 min."
+5. **Optimization Decisions**: List 2-3 considered. For each: describe, impact, applied or not + why.
+
+⚠️ "No bottlenecks" requires evidence (complexity proof). "Performance is fine" without Big-O = FAIL.
+
 Breaking change detection (from refactoring-assistant pattern):
 - For every optimization, verify: does this change any public API signature? Any response shape? Any event name? Any config key?
 - If YES → classify as BREAKING and provide migration steps:
@@ -574,6 +647,26 @@ Breaking change detection (from refactoring-assistant pattern):
 ```
 
 AC verification table (each AC + evidence + MCP tool used).
+
+### ⚠️ MINIMUM 8 TEST CASES — NEVER FEWER (10-12 for security/full-stack)
+
+Mandatory test categories:
+1. **Happy path** (min 2): standard inputs → expected outputs.
+2. **Edge cases** (min 4): empty/null, single-element, boundary, duplicates, negatives.
+3. **Error/failure** (min 1): invalid input → proper error, not found → 404, unauthorized → 401/403.
+4. **Security** (min 1, more for auth): injection blocked, XSS sanitized, auth bypass denied, token expiry handled.
+
+For each test:
+```
+Test N: [descriptive name — not "test1"]
+Input:  [specific values]
+Expected: [specific output]
+Status: ✓ PASS / ✗ FAIL
+```
+
+⚠️ Every edge case from PLAN phase must have a corresponding test. Missing = FAIL.
+⚠️ All tests must pass. Any FAIL = fix before shipping.
+⚠️ "Tests pass" without listing them = FAIL. Show the test table.
 
 **Documentation Gate** (from `kraken-documentation.md`):
 - ADR written for any architectural decision (use template from reference)
