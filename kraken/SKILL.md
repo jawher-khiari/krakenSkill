@@ -4,14 +4,14 @@ description: "Full-cycle development skill enforcing a mandatory 10-phase pipeli
 license: MIT
 compatibility: opencode
 metadata:
-  version: "7.0"
+  version: "7.1"
   audience: developers
   workflow: development
   platforms: "opencode, claude-code, codex"
   absorbed: "addyosmani/agent-skills (19 skills, 3 agents, 4 references)"
 ---
 
-# THE KRAKEN v7 — Baseline-Hardened Edition
+# THE KRAKEN v7.1 — Baseline-Hardened + 4-Core Parallel Edition
 
 ## IDENTITY
 
@@ -101,6 +101,265 @@ If you cannot counter your own rationalization with evidence, the step is mandat
 2. Never hallucinate tool output. No call = no result.
 3. Log every call: `🔧 MCP [tool]: [action] → [result summary]`
 4. Use reasoning tools (`sequential-thinking`, `cort`) BEFORE decisions with 2+ valid options.
+
+---
+
+## PARALLEL EXECUTION ENGINE (4-Core Scheduler)
+
+Kraken runs on a 4-lane parallel scheduler. Every task inside a phase is classified by resource type, assigned to a lane, and executed concurrently where dependencies allow.
+
+### Resource Classification
+
+Every tool call or sub-task is tagged **NET** or **LOCAL**:
+
+| Tag | Resource | Tools / Work | Bottleneck |
+|-----|----------|-------------|------------|
+| 🌐 **NET** | Internet / API | `ultrarag`, `gitmcp`, `postman` (remote), `playwright` (remote), `figma`, `shadcn-ui`, `browser-tools` (fetch), `openspec`, `npm install`, `git clone/fetch` | Bandwidth, latency |
+| 💻 **LOCAL** | CPU / Disk / RAM | `desktop-commander`, `git-mcp-server` (local ops), `sequential-thinking`, `cort`, `chrome-devtools`, file read/write, lint, compile, test run, code analysis | CPU cores, I/O |
+
+### 4-Lane Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  KRAKEN SCHEDULER                     │
+│                                                       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐│
+│  │ LANE 1   │ │ LANE 2   │ │ LANE 3   │ │ LANE 4   ││
+│  │ 🌐 NET   │ │ 🌐 NET   │ │ 💻 LOCAL │ │ 💻 LOCAL ││
+│  │ PRIMARY  │ │ PRIMARY  │ │ PRIMARY  │ │ PRIMARY  ││
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘│
+│       │             │             │             │      │
+│       └──────┬──────┘             └──────┬──────┘      │
+│              │                           │              │
+│       ┌──────▼──────┐             ┌──────▼──────┐      │
+│       │  NET QUEUE   │             │ LOCAL QUEUE  │      │
+│       │  Priority: 1 │◄──overflow──│ Priority: 2  │      │
+│       └──────────────┘──overflow──►└──────────────┘      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Priority Rules
+
+**Rule 1: NET-first scheduling.**
+When a task needs internet (API call, ultrarag query, remote MCP), it claims a NET lane (1-2) immediately. If both NET lanes are busy, it preempts a LOCAL lane (3-4). Internet tasks NEVER wait behind local tasks.
+
+**Rule 2: LOCAL-first for compute.**
+When a task needs CPU/disk (compile, lint, file ops, reasoning), it claims a LOCAL lane (3-4). If both LOCAL lanes are busy, it overflows to idle NET lanes. Local tasks never preempt active NET tasks.
+
+**Rule 3: Dependency gating.**
+A task cannot start until all its input dependencies have emitted results. No speculative execution on unverified data.
+
+**Rule 4: Starvation prevention.**
+No lane sits idle for >1 tick if there's queued work of ANY type. Idle NET lanes run LOCAL overflow. Idle LOCAL lanes run NET overflow.
+
+### Scheduling Algorithm
+
+```
+EVERY PHASE ENTRY:
+  1. List all sub-tasks for this phase
+  2. Tag each: 🌐 NET or 💻 LOCAL
+  3. Build dependency graph (which tasks need results from which)
+  4. Identify INDEPENDENT tasks (no deps on each other) → run parallel
+  5. Assign to lanes by priority:
+     a. 🌐 NET tasks → Lanes 1-2 first, overflow to 3-4
+     b. 💻 LOCAL tasks → Lanes 3-4 first, overflow to 1-2
+  6. Execute wave. Wait for wave to complete.
+  7. Feed results to dependent tasks → next wave.
+  8. Repeat until phase complete.
+```
+
+### Phase Parallelism Maps
+
+Each phase's internal tasks are grouped into **waves** — tasks in the same wave run concurrently across 4 lanes.
+
+#### P1: RECEIVE
+```
+Wave 1 (parallel):
+  🌐 L1: ultrarag "idea refinement [domain]" (if vague request)
+  💻 L3: sequential-thinking: parse request, classify type
+  💻 L4: cort: resolve ambiguities
+Wave 2 (sequential — needs Wave 1):
+  💻 L3: produce Requirement Card
+```
+
+#### P2: BRAINSTORM
+```
+Wave 1 (parallel — all independent):
+  🌐 L1: ultrarag "[domain] architecture patterns"
+  🌐 L2: gitmcp: read upstream docs, dependency READMEs
+  💻 L3: desktop-commander: list project structure, read configs
+  💻 L4: git-mcp-server: branches, recent commits, status
+Wave 2 (parallel — needs Wave 1 results):
+  💻 L3: sequential-thinking: evaluate approaches with codebase context
+  💻 L4: produce approach comparison table
+```
+
+#### P3: DECOMPOSE
+```
+Wave 1 (parallel):
+  💻 L3: sequential-thinking: map slices to ACs
+  💻 L4: build dependency graph, define interfaces
+```
+
+#### P4: PLAN
+```
+Wave 1 (parallel):
+  🌐 L1: ultrarag "planning methodology vertical slice [framework]"
+  🌐 L2: ultrarag "API contract design [framework]"
+  💻 L3: sequential-thinking: design pseudocode per slice
+  💻 L4: identify edge cases, error handling strategy
+Wave 2 (needs Wave 1):
+  🌐 L1: openspec: generate OpenAPI spec
+  💻 L3: compile DB schema with indexes
+  💻 L4: verify plan completeness against checklist
+```
+
+#### P5: DESIGN-UI
+```
+Wave 1 (parallel — FULL mode):
+  🌐 L1: ultrarag "WCAG 2.2 AA [component type]"
+  🌐 L2: figma: read design tokens, spacing, colors
+  💻 L3: shadcn-ui: search matching components
+  💻 L4: browser-tools: screenshot existing UI
+Wave 2 (needs Wave 1):
+  🌐 L1: ultrarag "ARIA keyboard navigation [component type]"
+  💻 L3: build state matrix per component
+  💻 L4: define responsive breakpoints + a11y requirements
+```
+
+#### P6: IMPLEMENT
+```
+Per SLICE (slices are sequential, but WITHIN each slice — parallel):
+Wave 1 (parallel):
+  🌐 L1: ultrarag "[design pattern] [framework] implementation"
+  🌐 L2: shadcn-ui: pull matched components (if UI slice)
+  💻 L3: desktop-commander: create type/model files
+  💻 L4: desktop-commander: create data access layer files
+Wave 2 (needs Wave 1):
+  💻 L3: write service/logic layer
+  💻 L4: write controller/API layer
+Wave 3 (needs Wave 2):
+  🌐 L1: postman: update API collection
+  💻 L3: write unit tests
+  💻 L4: run lint + compile check
+Wave 4 (needs Wave 3):
+  💻 L3: git-mcp-server: stage + commit slice
+  💻 L4: verify build passes
+```
+
+#### P7: SECURITY-AUDIT
+```
+Wave 1 (parallel — all independent queries):
+  🌐 L1: ultrarag "OWASP top 10 [vulnerability] [framework]"
+  🌐 L2: ultrarag "threat modeling [feature] STRIDE attack scenarios"
+  💻 L3: sequential-thinking: model attack scenarios
+  💻 L4: static analysis: scan code for injection/XSS/auth gaps
+Wave 2 (parallel — needs Wave 1):
+  🌐 L1: postman: security-focused API tests (injection, auth bypass)
+  🌐 L2: playwright: test auth flows, CSRF, XSS via browser
+  💻 L3: fill OWASP Top 10 table with specific findings
+  💻 L4: build threat model (min 3 threats + mitigations)
+Wave 3 (sequential — needs Wave 2):
+  💻 L3: fix any ❌ findings, apply root cause analysis
+```
+
+#### P8: REVIEW
+```
+Wave 1 (parallel — independent review passes):
+  🌐 L1: ultrarag "code review checklist [framework]"
+  💻 L3: Pass 1 (Correctness) + Pass 2 (Pattern Compliance)
+  💻 L4: Pass 4 (Maintainability) + Pass 5 (Performance)
+Wave 2 (needs Wave 1 + P7 receipt):
+  💻 L3: Pass 3 (Security cross-check against P7)
+  💻 L4: Pass 6 (Docs) + Pass 7 (Architecture)
+  🌐 L1: chrome-devtools: perf profiling (if UI)
+Wave 3 (sequential):
+  💻 L3: fix all blocking findings
+```
+
+#### P9: OPTIMIZE
+```
+Wave 1 (parallel):
+  🌐 L1: ultrarag "performance optimization [framework] [bottleneck]"
+  🌐 L2: ultrarag "refactoring patterns [specific pattern]"
+  💻 L3: compute Big-O time + space complexity
+  💻 L4: chrome-devtools: baseline profiling (if UI)
+Wave 2 (needs Wave 1):
+  💻 L3: apply optimizations, verify behavior unchanged
+  💻 L4: build caching strategy (TTLs, invalidation)
+```
+
+#### P10: VERIFY
+```
+Wave 1 (parallel — all independent test suites):
+  🌐 L1: playwright: E2E tests per AC
+  🌐 L2: postman: full API collection run
+  💻 L3: run unit + integration test suites
+  💻 L4: browser-tools: screenshot final result (if UI)
+Wave 2 (parallel — needs Wave 1):
+  🌐 L1: chrome-devtools: final performance audit
+  💻 L3: git-mcp-server: verify clean history
+  💻 L4: compile verification summary + ship checklist
+```
+
+### Cross-Phase Parallelism (Pipeline Overlap)
+
+When one phase's LATE outputs don't block the next phase's EARLY tasks, they overlap:
+
+```
+┌─ P4 (PLAN) ───────────────────┐
+│ Wave1: pseudocode + edges     │
+│ Wave2: DB schema + openapi ───┼──► P5 Wave1 starts (needs API spec from P4.W2)
+└───────────────────────────────┘
+                                 ┌─ P5 (DESIGN-UI) ──────────┐
+                                 │ Wave1: tokens + WCAG query │
+                                 │ Wave2: state matrix ────────┼──► P6 starts
+                                 └────────────────────────────┘
+```
+
+```
+┌─ P7 (SECURITY) ──────────────────────────┐
+│ Wave1: OWASP queries + static analysis   │
+│ Wave2: postman + playwright tests ────────┼──► P8 Passes 1,2,4,5 start
+│ Wave3: fix findings                       │    (don't need P7 yet)
+└──────────────────────────────────────────┘
+                                             ┌─ P8 (REVIEW) ─────────────┐
+                                             │ Wave1: Passes 1,2,4,5     │
+                                             │ Wave2: Pass 3 (needs P7!) │
+                                             └───────────────────────────┘
+```
+
+Overlap rules:
+- P4→P5: P5.Wave1 starts when P4.Wave2 emits API spec. P4.Wave2 continues in parallel.
+- P7→P8: P8 Passes 1,2,4,5 start when P6 receipt is available. Pass 3 waits for P7 receipt.
+- ALL OTHER transitions are strictly sequential (full receipt required).
+
+### Execution Log Format
+
+Every parallel wave is logged with lane assignments:
+
+```
+⚡ WAVE P[N].W[M] ──────────────────────
+  L1 🌐: [tool]: [action] → [status]
+  L2 🌐: [tool]: [action] → [status]
+  L3 💻: [tool]: [action] → [status]
+  L4 💻: [tool]: [action] → [status]
+  ⏱️ Wall: [time] | Saved: [sequential - parallel]
+─────────────────────────────────────────
+```
+
+### Contention Resolution
+
+When all 4 lanes are busy and new work arrives:
+
+| New task | Lanes 1-2 (NET) | Lanes 3-4 (LOCAL) | Action |
+|----------|-----------------|-------------------|--------|
+| 🌐 NET | Busy | Busy | **Preempt lowest-priority LOCAL task** on Lane 3 or 4. Paused LOCAL task resumes when a lane frees. |
+| 🌐 NET | Busy | Idle | Run on Lane 3 or 4 (overflow). |
+| 💻 LOCAL | Idle | Busy | Run on Lane 1 or 2 (overflow). |
+| 💻 LOCAL | Busy | Busy | **Queue**. LOCAL never preempts NET. Wait for any lane to free. |
+
+**NET preempts LOCAL, never the reverse.** This ensures API calls (highest latency) are never blocked by local compute.
 
 ---
 
