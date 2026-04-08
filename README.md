@@ -1,24 +1,28 @@
-# 🦑 The Kraken v6 — Agent Skills Edition
+# 🦑 The Kraken v7 — Mega-Absorption Edition
 
-A 10-phase development pipeline skill that works across **OpenCode**, **Claude Code**, and **Codex**. Uses MCP tools at every phase, retrieves domain knowledge on-demand through ultrarag, and now integrates anti-rationalization engines, agent personas, and 19 production-grade engineering workflows from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills).
+A 10-phase development pipeline skill that works across **OpenCode**, **Claude Code**, and **Codex**. Uses MCP tools at every phase, retrieves domain knowledge on-demand through ultrarag, and integrates patterns from **15 open-source repositories** including agent frameworks (CrewAI, MetaGPT, AutoGPT, LangGraph, TaskWeaver), prompt engineering research (dair-ai), context engineering skills, and production-grade engineering workflows.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Context Window (~3,800 tokens)             │
+│  Context Window (~4,200 tokens)             │
 │  SKILL.md — Pipeline + Receipts + MCP Map   │
 │  + Anti-Rationalization Engine              │
-│  + Agent Personas (Reviewer/Auditor/QA)     │
+│  + 6 Agent Personas (per-phase activation)  │
+│  + Context Engineering Discipline           │
+│  + Reflective Execution + Step-Back Rule    │
 └──────────────────┬──────────────────────────┘
                    │ on-demand queries (~200 tokens each)
 ┌──────────────────▼──────────────────────────┐
-│  UltraRAG (~12,800 tokens stored)           │
-│  14 knowledge docs: security, design,       │
-│  patterns, review, planning, testing, optim,│
+│  UltraRAG (~18,000 tokens stored)           │
+│  19 knowledge docs spanning:                │
+│  security, design, patterns, review,        │
+│  planning, testing, optimization,           │
 │  anti-rationalization, API design, CI/CD,   │
 │  debugging, simplification, docs/ADR, a11y, │
-│  ideation                                   │
+│  ideation, context engineering, observability│
+│  orchestration, prompt engineering, tech debt│
 └─────────────────────────────────────────────┘
 ```
 
@@ -118,8 +122,13 @@ The `knowledge/` directory contains 7 documents designed for ultrarag ingestion.
 | `kraken-debugging.md` | **NEW** 5-step triage, root cause analysis, error output as untrusted data | Phase 7-8, FIX |
 | `kraken-simplification.md` | **NEW** Chesterton's Fence, clarity > cleverness, Rule of 500 | Phase 9 |
 | `kraken-documentation.md` | **NEW** ADR templates, comment standards, README requirements | Phase 10 |
-| `kraken-accessibility.md` | **NEW** WCAG 2.1 AA full checklist, ARIA patterns, testing tools | Phase 5 |
-| `kraken-ideation.md` | **NEW** Divergent/convergent thinking, How Might We, idea lenses | Phase 1-2 |
+| `kraken-accessibility.md` | **v6** WCAG 2.1 AA full checklist, ARIA patterns, testing tools | Phase 5 |
+| `kraken-ideation.md` | **v6** Divergent/convergent thinking, How Might We, idea lenses | Phase 1-2 |
+| `kraken-context-engineering.md` | **v7** Context degradation (5 patterns), compression strategies, memory layers | ALL |
+| `kraken-observability.md` | **v7** Three Pillars (Logs/Metrics/Traces), Four Golden Signals, health checks | Phase 4-6, 10 |
+| `kraken-orchestration.md` | **v7** Delegation patterns, complexity tax, reflective execution, experience learning | Phase 1-4, 9 |
+| `kraken-prompt-engineering.md` | **v7** CoT, Tree of Thought, ReAct, Step-Back, Self-Consistency techniques | Phase 1-4, 7 |
+| `kraken-tech-debt.md` | **v7** Dependency hygiene, dead code removal, TODO audit, code freshness indicators | Phase 2, 6, 8-9 |
 
 ## Usage
 
@@ -156,6 +165,7 @@ This skill integrates patterns from [xixu-me/prompt-library](https://github.com/
 | v4 | 13 MCP tools mapped to all phases |
 | v5 | Ultrarag knowledge externalization, prompt library integration, OpenCode compatibility |
 | v6 | Agent Skills absorption (addyosmani/agent-skills): anti-rationalization engine, 3 agent personas, 8 new knowledge files (API design, CI/CD, debugging, simplification, documentation/ADR, accessibility, ideation, anti-rationalization), enriched all 10 phases with red flags + rationalization checks |
+| v7 | Mega-Absorption: parsed 15 repos (CrewAI, MetaGPT, AutoGPT, TaskWeaver, LangGraph, devika, llama_index, e2b, prompt-engineering-guide, agent-skills-for-context-engineering, agentic-prompts, claude-skill-prompt-architect, awesome-agent-skills, smol-ai/developer). Added 5 new knowledge files (context engineering, observability, orchestration, prompt engineering, tech debt). Added 3 new agent personas (Gardener, Annihilator, Observer). Added 3 new absolute rules (Step-Back, context hygiene, reflective execution). Enriched P2 with codebase health + Tree of Thought, P4 with observability plan, P6 with reflective execution + instrumentation, P9 with tech debt audit + complexity tax |
 
 ## License
 
