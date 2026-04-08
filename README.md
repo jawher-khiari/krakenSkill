@@ -1,19 +1,24 @@
-# 🦑 The Kraken v5 — Ultrarag Edition
+# 🦑 The Kraken v6 — Agent Skills Edition
 
-A 10-phase development pipeline skill that works across **OpenCode**, **Claude Code**, and **Codex**. Uses MCP tools at every phase and retrieves domain knowledge on-demand through ultrarag, reducing context consumption by ~54%.
+A 10-phase development pipeline skill that works across **OpenCode**, **Claude Code**, and **Codex**. Uses MCP tools at every phase, retrieves domain knowledge on-demand through ultrarag, and now integrates anti-rationalization engines, agent personas, and 19 production-grade engineering workflows from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills).
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Context Window (~3,300 tokens)             │
-│  SKILL.md — Procedures + Receipts + MCP Map │
+│  Context Window (~3,800 tokens)             │
+│  SKILL.md — Pipeline + Receipts + MCP Map   │
+│  + Anti-Rationalization Engine              │
+│  + Agent Personas (Reviewer/Auditor/QA)     │
 └──────────────────┬──────────────────────────┘
                    │ on-demand queries (~200 tokens each)
 ┌──────────────────▼──────────────────────────┐
-│  UltraRAG (~7,100 tokens stored)            │
-│  7 knowledge docs: security, design,        │
-│  patterns, review, planning, testing, optim │
+│  UltraRAG (~12,800 tokens stored)           │
+│  14 knowledge docs: security, design,       │
+│  patterns, review, planning, testing, optim,│
+│  anti-rationalization, API design, CI/CD,   │
+│  debugging, simplification, docs/ADR, a11y, │
+│  ideation                                   │
 └─────────────────────────────────────────────┘
 ```
 
@@ -107,6 +112,14 @@ The `knowledge/` directory contains 7 documents designed for ultrarag ingestion.
 | `kraken-planning.md` | INVEST criteria, vertical slicing, estimation, scalability strategy | Phase 4 |
 | `kraken-testing.md` | Testing pyramid, Arrange/Act/Assert, test grouping, coverage | Phase 6, 10 |
 | `kraken-optimization.md` | Refactoring patterns, Rule of Three, breaking change detection | Phase 9 |
+| `kraken-anti-rationalization.md` | **NEW** Excuse → rebuttal tables for all 10 phases | ALL |
+| `kraken-api-design.md` | **NEW** Hyrum's Law, contract-first, boundary validation, One-Version Rule | Phase 4-5 |
+| `kraken-ci-cd-shipping.md` | **NEW** CI/CD pipelines, git workflow, launch checklists, feature flags | Phase 6, 10 |
+| `kraken-debugging.md` | **NEW** 5-step triage, root cause analysis, error output as untrusted data | Phase 7-8, FIX |
+| `kraken-simplification.md` | **NEW** Chesterton's Fence, clarity > cleverness, Rule of 500 | Phase 9 |
+| `kraken-documentation.md` | **NEW** ADR templates, comment standards, README requirements | Phase 10 |
+| `kraken-accessibility.md` | **NEW** WCAG 2.1 AA full checklist, ARIA patterns, testing tools | Phase 5 |
+| `kraken-ideation.md` | **NEW** Divergent/convergent thinking, How Might We, idea lenses | Phase 1-2 |
 
 ## Usage
 
@@ -142,6 +155,7 @@ This skill integrates patterns from [xixu-me/prompt-library](https://github.com/
 | v3 | Receipt + Recall memory system, hash verification |
 | v4 | 13 MCP tools mapped to all phases |
 | v5 | Ultrarag knowledge externalization, prompt library integration, OpenCode compatibility |
+| v6 | Agent Skills absorption (addyosmani/agent-skills): anti-rationalization engine, 3 agent personas, 8 new knowledge files (API design, CI/CD, debugging, simplification, documentation/ADR, accessibility, ideation, anti-rationalization), enriched all 10 phases with red flags + rationalization checks |
 
 ## License
 
