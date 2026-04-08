@@ -32,6 +32,20 @@ A 10-phase development pipeline skill that works across **OpenCode**, **Claude C
 RECEIVE → BRAINSTORM → DECOMPOSE → PLAN → DESIGN-UI → IMPLEMENT → SECURITY-AUDIT → REVIEW → OPTIMIZE → VERIFY
 ```
 
+### Companion Skill: Project Indexer
+
+The `project-indexer/` skill creates and maintains `.kraken/INDEX.md` — a machine-readable codebase map. The agent reads this every interaction. Updated automatically on every file change during Phase 6.
+
+```
+┌─────────────────────────────────────────────┐
+│  .kraken/INDEX.md (auto-maintained)         │
+│  Stack → Architecture → Entry Points        │
+│  API Layer → Business Logic → Data Layer    │
+│  Presentation → Infrastructure → Tests      │
+│  Dependency Map → Env Vars                  │
+└─────────────────────────────────────────────┘
+```
+
 Every phase:
 - Uses designated MCP tools (13 tools mapped)
 - Emits a structured receipt with verification hash
@@ -166,6 +180,7 @@ This skill integrates patterns from [xixu-me/prompt-library](https://github.com/
 | v5 | Ultrarag knowledge externalization, prompt library integration, OpenCode compatibility |
 | v6 | Agent Skills absorption (addyosmani/agent-skills): anti-rationalization engine, 3 agent personas, 8 new knowledge files (API design, CI/CD, debugging, simplification, documentation/ADR, accessibility, ideation, anti-rationalization), enriched all 10 phases with red flags + rationalization checks |
 | v7 | Mega-Absorption: parsed 15 repos (CrewAI, MetaGPT, AutoGPT, TaskWeaver, LangGraph, devika, llama_index, e2b, prompt-engineering-guide, agent-skills-for-context-engineering, agentic-prompts, claude-skill-prompt-architect, awesome-agent-skills, smol-ai/developer). Added 5 new knowledge files (context engineering, observability, orchestration, prompt engineering, tech debt). Added 3 new agent personas (Gardener, Annihilator, Observer). Added 3 new absolute rules (Step-Back, context hygiene, reflective execution). Enriched P2 with codebase health + Tree of Thought, P4 with observability plan, P6 with reflective execution + instrumentation, P9 with tech debt audit + complexity tax |
+| v7.1 | Added `project-indexer` companion skill: auto-generates and maintains `.kraken/INDEX.md` codebase map, read by agent every interaction, auto-updated on file changes. Added Senior Staff Engineer Communication Protocol (think→analyze→evaluate→produce→verify). Integrated indexer into P2 (read/create) and P6 (auto-update on changes) |
 
 ## License
 
