@@ -1,96 +1,38 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Kraken v5 — Cross-platform skill installer
-# Supports: OpenCode, Claude Code, Codex, and any .agents-compatible tool
+echo -e "${BLUE}🦑 Kraken v8.2 Installer${NC}"
+echo "========================"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_SRC="$SCRIPT_DIR/kraken/SKILL.md"
-KNOWLEDGE_SRC="$SCRIPT_DIR/knowledge"
+# Skill
+SKILLS="$HOME/.claude/skills"
+mkdir -p "$SKILLS/kraken"
+cp "$SCRIPT_DIR/kraken/SKILL.md" "$SKILLS/kraken/SKILL.md"
+echo -e "${GREEN}✓${NC} Kraken skill installed"
 
-if [ ! -f "$SKILL_SRC" ]; then
-    echo "❌ SKILL.md not found at $SKILL_SRC"
-    echo "   Run this script from the krakenSkill repo root."
-    exit 1
-fi
+# Knowledge
+mkdir -p "$SKILLS/kraken/knowledge"
+cp "$SCRIPT_DIR/knowledge/"*.md "$SKILLS/kraken/knowledge/" 2>/dev/null && \
+  echo -e "${GREEN}✓${NC} Knowledge files installed" || true
 
-echo "🦑 Kraken v5 — Skill Installer"
+# Checks
 echo ""
-
-# Detect platform
-install_global() {
-    local target="$1"
-    mkdir -p "$(dirname "$target")"
-    cp "$SKILL_SRC" "$target"
-    echo "  ✅ Installed to $target"
-}
-
-install_knowledge() {
-    local target_dir="$1"
-    mkdir -p "$target_dir"
-    cp "$KNOWLEDGE_SRC"/*.md "$target_dir/"
-    echo "  ✅ Knowledge base copied to $target_dir"
-}
-
-echo "Select installation targets:"
+echo -e "${YELLOW}Prerequisite checks:${NC}"
+command -v lean-ctx &>/dev/null && echo -e "  ${GREEN}✓${NC} lean-ctx: $(lean-ctx --version 2>/dev/null || echo installed)" || echo -e "  ${YELLOW}⚠${NC} lean-ctx: not found — install from leanctx.com"
 echo ""
-echo "  [1] Global — All platforms (OpenCode + Claude Code + Codex)"
-echo "  [2] OpenCode only"
-echo "  [3] Claude Code only"
-echo "  [4] Project-local (current directory)"
-echo "  [5] All of the above"
+echo -e "${YELLOW}MCP servers (install manually in Claude Code):${NC}"
+echo "  claude mcp add ruflo -- npx ruflo@latest"
+echo "  claude mcp add cognee -- npx cognee-mcp@latest"
+echo "  claude mcp add playwright -- npx @anthropic/mcp-playwright"
+echo "  claude mcp add git-server -- npx @anthropic/mcp-git"
+echo "  claude mcp add browser -- npx @anthropic/mcp-puppeteer"
+echo "  claude mcp add magic-ui -- npx @anthropic/mcp-magic"
+echo "  claude mcp add aws -- npx @aws/mcp@latest"
+echo "  claude mcp add genai-toolbox -- npx genai-toolbox@latest"
 echo ""
-read -rp "Choice [1-5]: " choice
-
-case "$choice" in
-    1|5)
-        echo ""
-        echo "Installing globally..."
-        # OpenCode
-        install_global "$HOME/.config/opencode/skills/kraken/SKILL.md"
-        # Claude Code
-        install_global "$HOME/.claude/skills/kraken/SKILL.md"
-        # Agents (Codex + others)
-        install_global "$HOME/.agents/skills/kraken/SKILL.md"
-        ;;
-    2)
-        echo ""
-        echo "Installing for OpenCode..."
-        install_global "$HOME/.config/opencode/skills/kraken/SKILL.md"
-        ;;
-    3)
-        echo ""
-        echo "Installing for Claude Code..."
-        install_global "$HOME/.claude/skills/kraken/SKILL.md"
-        ;;
-    4)
-        echo ""
-        echo "Installing to current project..."
-        ;;
-esac
-
-if [ "$choice" = "4" ] || [ "$choice" = "5" ]; then
-    echo ""
-    echo "Installing project-local skills..."
-    PROJECT_DIR="$(pwd)"
-    # OpenCode project
-    install_global "$PROJECT_DIR/.opencode/skills/kraken/SKILL.md"
-    # Claude Code project
-    install_global "$PROJECT_DIR/.claude/skills/kraken/SKILL.md"
-    # Agents project
-    install_global "$PROJECT_DIR/.agents/skills/kraken/SKILL.md"
-fi
-
+echo -e "${YELLOW}For medium+ tasks, install spec-kit:${NC}"
+echo "  uvx --from git+https://github.com/github/spec-kit.git specify init ."
 echo ""
-echo "📚 Knowledge base (for ultrarag)..."
-echo "   Knowledge files are in: $KNOWLEDGE_SRC"
-echo "   Ingest these into your ultrarag instance for on-demand retrieval."
-echo "   See README.md for ultrarag setup instructions."
-
-echo ""
-echo "🦑 Kraken v5 installed successfully!"
-echo ""
-echo "Test it:"
-echo "  OpenCode:    opencode → type 'kraken build a health check endpoint'"
-echo "  Claude Code: claude → type 'kraken build a health check endpoint'"
-echo ""
+echo -e "${GREEN}Done. Restart Claude Code.${NC}"
